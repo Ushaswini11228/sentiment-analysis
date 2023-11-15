@@ -1,0 +1,36 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.ensemble import VotingClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+# Load the dataset
+data = pd.read_csv('tweets.csv')
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(data['tweet'], data['emotion'], test_size=0.2, random_state=42)
+
+# Create a TfidfVectorizer object to convert text data to numerical data
+tfidf = TfidfVectorizer()
+
+# Convert the training data into a sparse matrix of TF-IDF features
+X_train_tfidf = tfidf.fit_transform(X_train)
+
+# Create a voting classifier with Logistic Regression and SGD classifiers
+lr = LogisticRegression(random_state=42)
+sgd = SGDClassifier(random_state=42)
+voting_clf = VotingClassifier(estimators=[('lr', lr), ('sgd', sgd)], voting='hard')
+
+# Fit the voting classifier to the training data
+voting_clf.fit(X_train_tfidf, y_train)
+
+# Convert the testing data into a sparse matrix of TF-IDF features
+X_test_tfidf = tfidf.transform(X_test)
+
+# Use the voting classifier to predict the emotions of the testing data
+y_pred = voting_clf.predict(X_test_tfidf)
+
+# Calculate the accuracy score of the predictions
+accuracy = accuracy_score(y_test, y_pred)
+print('Accuracy:', accuracy)
